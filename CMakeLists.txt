@@ -108,7 +108,7 @@ catkin_package(
 #  DEPENDS system_lib
 )
 
-catkin_install_python(PROGRAMS scriptsV1/odometry_subscriber_node.py scriptsV1/battery_subscriber_node.py scriptsV1/velocity_publisher_node.py scriptsV1/run_turtlebot_node_old.py scripts/battery_status.py scripts/message_creator.py scripts/odometry_status.py scripts/run_turtlebot_node.py scripts/orientation.py
+catkin_install_python(PROGRAMS turtlebot_scripts/battery_status.py turtlebot_scripts/message_creator.py turtlebot_scripts/odometry_status.py turtlebot_scripts/run_turtlebot_node.py turtlebot_scripts/orientation.py
  DESTINATION ${CATKIN_PACKAGE_BIN_DESTINATION}
 )
 
