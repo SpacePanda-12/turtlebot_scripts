@@ -10,10 +10,15 @@ from geometry_msgs.msg import Twist
 from nav_msgs.msg import Odometry
 from sensor_msgs.msg import BatteryState, Imu
 
+
 import battery_status
 import odometry_status
 import message_creator
 import orientation
+from battery_status import battery
+from odometry_status import callback
+from message_creator import create_message
+from orientation import get_orientation
 
 # just setting an initial value for these; otherwise an error gets thrown
 posX = 0
@@ -53,6 +58,7 @@ def run_turtlebot():
         rospy.Subscriber('odom', Odometry, odometry_status.callback)
 
         # create a subscriber for battery level
+        from battery_status import battery
         rospy.Subscriber('battery_state', BatteryState, battery_status.battery)
 
         # create a subscriber for IMU orientation (maybe acceleration too)
