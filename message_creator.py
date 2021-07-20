@@ -42,6 +42,12 @@ def create_message(twist, batteryLevel, posX, posY, orient_x, orient_y, orient_z
         X Position: %f
         Y Position: %f
         --------------------------------
+        Orientation (IMU)
+        x: %f
+        y: %f
+        z: %f
+        w: %f
+        --------------------------------
         Estimated battery level: %f/100
         BATTERY LEVEL LOW. CHARGE SOON
         --------------------------------
