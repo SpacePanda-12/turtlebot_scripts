@@ -42,6 +42,12 @@ def create_message(twist, batteryLevel, posX, posY, orient_x, orient_y, orient_z
         X Position: %f
         Y Position: %f
         --------------------------------
+        Orientation (IMU)
+        x: %f
+        y: %f
+        z: %f
+        w: %f
+        --------------------------------
         Estimated battery level: %f/100
         BATTERY LEVEL LOW. CHARGE SOON
         --------------------------------
@@ -58,4 +64,6 @@ def create_message(twist, batteryLevel, posX, posY, orient_x, orient_y, orient_z
     # write the above message to the console with velocity, position, battery level values
     rospy.loginfo(msg, twist.linear.x, twist.linear.y, twist.angular.z, posX, posY,
     orient_x, orient_y, orient_z, orient_w, batteryLevel)
+    
+
     
