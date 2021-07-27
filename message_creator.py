@@ -4,20 +4,22 @@ import rospy
 
 # simple if else for low battery warning
 def create_message(twist, batteryLevel, posX, posY, orient_x, orient_y, orient_z, orient_w):
-    if(batteryLevel>=20):
+    if(batteryLevel>=10):
         msg = """
         Sending commands to turtlebot...
         --------------------------------
         Linear velocities
         X: %f
         Y: %f
-        Angular Velocity: %f
+        Angular Velocity (CCW): %f
         --------------------------------
         Odometry
-        X Position: %f
-        Y Position: %f
-        --------------------------------
-        Orientation (IMU)
+
+        Position:
+        X: %f
+        Y: %f
+
+        Orientation:
         x: %f
         y: %f
         z: %f
@@ -62,6 +64,6 @@ def create_message(twist, batteryLevel, posX, posY, orient_x, orient_y, orient_z
         """
 
     # write the above message to the console with velocity, position, battery level values
-    rospy.loginfo(msg, twist.linear.x, twist.linear.y, twist.angular.z, posX, posY,
-    orient_x, orient_y, orient_z, orient_w, batteryLevel)
+    rospy.loginfo(msg, round(twist.linear.x, 2), round(twist.linear.y, 2), round(twist.angular.z, 2), round(posX, 2), round(posY, 2),
+    round(orient_x, 2), round(orient_y, 2), round(orient_z, 2), round(orient_w, 2), batteryLevel)
     
