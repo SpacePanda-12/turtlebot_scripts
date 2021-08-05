@@ -2,28 +2,28 @@
 
 import rospy
 
-# simple if else for low battery warning
-def create_message(twist, batteryLevel, posX, posY, orient_x, orient_y, orient_z, orient_w):
-    if(batteryLevel>=10):
+
+def create_message(move_command, batteryLevel, distance, angle):
+    """
+    
+    Generates a message containing information on the turtlebot's
+    current position, rotation, command, and battery level and then
+    outputs this information to the console.
+    
+    """
+    
+    if(batteryLevel >= 10):
         msg = """
         Sending commands to turtlebot...
         --------------------------------
-        Linear velocities
-        X: %f
-        Y: %f
+        Linear velocity: %f
         Angular Velocity (CCW): %f
         --------------------------------
         Odometry
 
-        Position:
-        X: %f
-        Y: %f
+        Distance travelled (meters): %f
 
-        Orientation:
-        x: %f
-        y: %f
-        z: %f
-        w: %f
+        Angle (degrees): %f 
         --------------------------------
         Estimated battery level: %f/100
         --------------------------------
@@ -35,37 +35,25 @@ def create_message(twist, batteryLevel, posX, posY, orient_x, orient_y, orient_z
         msg = """
         Sending commands to turtlebot...
         --------------------------------
-        Linear velocities
-        X: %f
-        Y: %f
-        Angular Velocity: %f
+        Linear velocity: %f
+        Angular Velocity (CCW): %f
         --------------------------------
         Odometry
-        X Position: %f
-        Y Position: %f
-        --------------------------------
-        Orientation (IMU)
-        x: %f
-        y: %f
-        z: %f
-        w: %f
+
+        Distance travelled (meters): %f
+
+        Angle (degrees): %f
         --------------------------------
         Estimated battery level: %f/100
-        BATTERY LEVEL LOW. CHARGE SOON
+        BATTERY LEVEL LOW. CHARGE SOON.
         --------------------------------
         
-
-
-
-
-
         --------------------------------
 
         """
 
     # write the above message to the console with velocity, position, battery level values
-    rospy.loginfo(msg, round(twist.linear.x, 2), round(twist.linear.y, 2), round(twist.angular.z, 2), round(posX, 2), round(posY, 2),
-    round(orient_x, 2), round(orient_y, 2), round(orient_z, 2), round(orient_w, 2), batteryLevel)
+    rospy.loginfo(msg, round(move_command.linear.x, 2), round(move_command.angular.z, 2), distance.x, angle, batteryLevel)
     
 
     
