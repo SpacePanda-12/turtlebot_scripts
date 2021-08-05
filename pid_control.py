@@ -21,8 +21,13 @@ class pid_controller(object):
     
     
     def _set_gains(self, p_gain, d_gain, i_gain):
-        # setter for proportional, derivative, and integral components
-        # of a the controller with a built-in check for integral gain bounds
+        """
+
+        Setter for proportional, derivative, and integral components
+        of a the controller with a built-in check for integral gain bounds        
+        
+        """
+
         self._p_gain = p_gain
         self._d_gain = d_gain
         self._i_gain = i_gain
@@ -32,6 +37,12 @@ class pid_controller(object):
         return (self._p_gain, self._d_gain, self._i_gain)
         
     def _set_errors(self, current_state, goal, dt):
+        """
+        
+        Compare current state to goal state and set errors
+        accordingly for each type of gain
+
+        """
         self._p_error = goal - current_state
 
         if dt > 0:
@@ -50,11 +61,21 @@ class pid_controller(object):
         return self._last_time
 
     def _evaluate_controller(self, p_gain, d_gain, i_gain, p_error, d_error, i_error):
-        # output PID controller based on state and gains
+        """
+        
+        Output PID controller based on current state and gains
+
+        """
         return p_gain * p_error + d_gain * d_error + i_gain * i_error
 
     #this is the only function that needs to be called from outside this class
     def get_command(self, current_state, goal):
+        """
+        
+        Creates a PID controller and returns a command 
+        
+        """
+
         if self._last_time is None:
             self._last_time = time.time()
             self.current_time = self._last_time

@@ -2,10 +2,17 @@
 
 import rospy
 
-# simple if else for low battery warning
+
 def create_message(move_command, batteryLevel, distance, angle):
+    """
     
-    if(batteryLevel>=10):
+    Generates a message containing information on the turtlebot's
+    current position, rotation, command, and battery level and then
+    outputs this information to the console.
+    
+    """
+    
+    if(batteryLevel >= 10):
         msg = """
         Sending commands to turtlebot...
         --------------------------------
@@ -14,7 +21,7 @@ def create_message(move_command, batteryLevel, distance, angle):
         --------------------------------
         Odometry
 
-        Distance travelled: %f
+        Distance travelled (meters): %f
 
         Angle (degrees): %f 
         --------------------------------
@@ -33,7 +40,7 @@ def create_message(move_command, batteryLevel, distance, angle):
         --------------------------------
         Odometry
 
-        Distance travelled: %f
+        Distance travelled (meters): %f
 
         Angle (degrees): %f
         --------------------------------

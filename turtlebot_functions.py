@@ -1,35 +1,34 @@
-from genpy import message
-from tf import listener
 import rospy
 import pid_control
 import os
 import tf
 from math import pi, sqrt
 import time
-from geometry_msgs.msg import Twist, Point
 
-import message_creator
 import odometry_status
-import battery_status
+from send_command import execute_command
 
 class turtlebot_command(object):
 
-    def __init__(self, command_publisher, rate):
+    def __init__(self, command_publisher, rate, listener, position, move_command, odom_frame, base_frame):
+        """
+        
+        Initializes control script that uses PID control to move the turtlebot.
+
+        When substituting in a new control script, it must be structured like this
+        script; i.e. it must be contained within a class and have an init function with 
+        the same arguments. These arguments are not used in this script directly, but are 
+        passed to other external functions while commands are being run. 
+        
+        """
+        
         self.rate = rate
         self.command_publisher = command_publisher
-
-        # create transform listener to transform coords from turtlebot frame to absolute frame
-        self.listener = tf.TransformListener()
-
-        # create a position of type Point
-        self.position = Point()
-        
-        # create an object to send commands to turtlebot of type Twist
-        # allows us to send velocity and rotation commands
-        self.move_command = Twist()
-
-        # set odom_frame to the /odom topic being published by the turtlebot
-        self.odom_frame = '/odom'
+        self.listener = listener
+        self.position = position
+        self.move_command = move_command
+        self.odom_frame = odom_frame
+        self.base_frame = base_frame
 
         # Warning: Don't modify these gains. They are tailored to the
         # turtlebots
@@ -41,14 +40,15 @@ class turtlebot_command(object):
         self.d_gain_angular = 0.005
         self.i_gain_angular = 0.003
 
+        # create a PID controller object for translational movement
         self.linear_controller = pid_control.pid_controller(
             self.p_gain_linear, self.d_gain_linear, self.i_gain_linear
         )
         
+        # create a PID controller object for angular movement
         self.angular_controller = pid_control.pid_controller(
             self.p_gain_angular, self.d_gain_angular, self.i_gain_angular
         )
-
 
 
     def rotate_turtlebot(self, goal_rotation):
@@ -58,18 +58,8 @@ class turtlebot_command(object):
         
         """
         # reset odometry and timeout after 3 seconds 
+        # IMPORTANT: If running on odometry only, this must be run before each command
         os.system("timeout 3 rostopic pub /reset std_msgs/Empty '{}'")
-
-        try:
-            self.listener.waitForTransform(self.odom_frame, "base_footprint", rospy.Time(), rospy.Duration(1.0))
-            self.base_frame = "base_footprint"
-        except(tf.Exception, tf.LookupException, tf.ConnectivityException):
-            try:
-                self.listener.waitForTransform(self.odom_frame, 'base_link', rospy.Time(), rospy.Duration(1.0))
-                self.base_frame = 'base_link'
-            except(tf.Exception, tf.ConnectivityException, tf.LookupException):
-                rospy.loginfo("Cannot find transform between odom and base_link or base_footprint")
-                rospy.signal_shutdown("tf Exception")
 
         # if the angle is positive, make sure it's
         # between 0 and 360
@@ -102,17 +92,19 @@ class turtlebot_command(object):
         # get current rotation
         (self.position, self.rotation) = odometry_status.get_odom(self.listener, self.odom_frame, self.base_frame)
 
+        # set max rotational command
         max_command = 1
         start_time = time.time()
 
         while abs(goal_rotation - (self.rotation)) > 0.25*2*pi/360:
+            
+            # update position and rotation measurements
+            (self.position, self.rotation) = odometry_status.get_odom(self.listener, self.odom_frame, self.base_frame)
 
             # break the loop if it takes more than 10 seconds
             current_time = time.time()
             if (current_time - start_time) > 15:
                 break
-
-            (self.position, self.rotation) = odometry_status.get_odom(self.listener, self.odom_frame, self.base_frame)
 
             # keep the rotation positive and within [0, 2*pi]
             if goal_rotation > 0:
@@ -141,19 +133,12 @@ class turtlebot_command(object):
             elif command < -max_command:
                 command  = -max_command
 
-            # set and publish the linear and angular commands
-            self.move_command.linear.x = 0
-            self.move_command.angular.z = command
-            self.command_publisher.publish(self.move_command)
-
-            # publish turtlebot status to console
-            message_creator.create_message(
-                self.move_command, battery_status.batteryLevel, self.position, self.rotation*360/(2*pi)
-            )
-
-            # sleep to avoid overloading turtlebot with commands
-            rospy.sleep(0.01)
+            # send command to turtlebot and output message to the console
+            # IMPORTANT: When substituting a new control script in, this function
+            # must be called in order to actually send the command to the turtlebot
+            execute_command(self.command_publisher, self.move_command, 0, command, self.position, self.rotation)
         
+        # pause to avoid commands starting before the last one has ended
         rospy.sleep(1)
         print("Rotation complete")
 
@@ -165,24 +150,17 @@ class turtlebot_command(object):
 
         """
 
-        # reset odometry and timeout after 3 seconds 
+        # reset odometry and timeout after 3 seconds
+        # IMPORTANT: If running on odometry only, this must be run before each command
         os.system("timeout 3 rostopic pub /reset std_msgs/Empty '{}'")
 
-        try:
-            self.listener.waitForTransform(self.odom_frame, "base_footprint", rospy.Time(), rospy.Duration(1.0))
-            self.base_frame = "base_footprint"
-        except(tf.Exception, tf.LookupException, tf.ConnectivityException):
-            try:
-                self.listener.waitForTransform(self.odom_frame, 'base_link', rospy.Time(), rospy.Duration(1.0))
-                self.base_frame = 'base_link'
-            except(tf.Exception, tf.ConnectivityException, tf.LookupException):
-                rospy.loginfo("Cannot find transform between odom and base_link or base_footprint")
-                rospy.signal_shutdown("tf Exception")
-        
+        # set max translational movement command
         max_command = 0.2
 
+        # update position and rotation readings
         (self.position, self.rotation) = odometry_status.get_odom(self.listener, self.odom_frame, self.base_frame)
 
+        # check which direction turtlebot needs to move
         if goal_distance > 0:
             current_distance = sqrt((self.position.x)**2 + (self.position.y)**2)
         else:
@@ -190,6 +168,9 @@ class turtlebot_command(object):
 
 
         while abs(goal_distance - current_distance) > .01*abs(goal_distance):
+
+            # update position and rotation
+            (self.position, self.rotation) = odometry_status.get_odom(self.listener, self.odom_frame, self.base_frame)
             
             command = self.linear_controller.get_command(current_distance, goal_distance)
             
@@ -198,26 +179,17 @@ class turtlebot_command(object):
             elif command < -max_command:
                 command = max_command
 
-            self.move_command.linear.x = command
-            self.move_command.angular.z = 0
-
-            self.command_publisher.publish(self.move_command)
-            (self.position, self.rotation) = odometry_status.get_odom(self.listener, self.odom_frame, self.base_frame)
+            # send command to turtlebot and output message to the console
+            # IMPORTANT: When substituting a new control script in, this function
+            # must be called in order to actually send the command to the turtlebot
+            execute_command(self.command_publisher, self.move_command, command, 0, self.position, self.rotation)
 
             if goal_distance > 0:
                 current_distance = sqrt((self.position.x)**2 + (self.position.y)**2)
             else:
                 current_distance = -sqrt((self.position.x)**2 + (self.position.y)**2)
 
-            # publish turtlebot status to console
-            
-            message_creator.create_message(
-                self.move_command, battery_status.batteryLevel, self.position, self.rotation*360/(2*pi)
-            )
-
-            rospy.sleep(0.01)
-
-        
+        # pause to avoid commands starting before the last one has ended
         rospy.sleep(1)
         print("Movement complete")
 

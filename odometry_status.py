@@ -18,7 +18,6 @@ def get_odom(listener, odom_frame, base_frame):
         (trans,rot) = listener.lookupTransform(odom_frame, base_frame, rospy.Time(0))
         rotation = euler_from_quaternion(rot)
         
-    
     except(tf.Exception, tf.ConnectivityException, tf.LookupException):
         rospy.loginfo("tf Exception")
         return

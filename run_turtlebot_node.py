@@ -13,7 +13,6 @@ from math import sqrt, pi
 from actionlib_msgs.msg import *
 from sound_play.libsoundplay import SoundClient
 from tf.transformations import euler_from_quaternion
-from nav_msgs.msg import Odometry
 
 # import other realm-specific scripts
 import battery_status
@@ -36,15 +35,48 @@ batteryLevel = 100
 class turtlebot(object):
     
     def __init__(self):
+        """
+        
+        Initializes publishers, subscribers, and various
+        other necessary variables.
+
+        IMPORTANT: When replacing the control script, you must
+        modify the "self.command = ..." line (line 102) within this function.
+        This line of code passes several important arguments to
+        the control script that are needed to call various functions.
+        
+        """
         # create a node name run_turtlebot_node
         rospy.init_node('run_turtlebot_node', anonymous=True)
+
+        sound_client = SoundClient()
+        sound = rospy.Publisher('sound', SoundClient, queue_size=10)
+        rospy.sleep(2)
+        sound.publish('/home/realm/Downloads/chime_up.wav')
 
         # set update rate; i.e. how often we send commands (Hz)
         self.rate = rospy.Rate(10)
 
+        # create transform listener to transform coords from turtlebot frame to absolute frame
+        self.listener = tf.TransformListener()
+
+        # create a position of type Point
+        self.position = Point()
+        
+        # create an object to send commands to turtlebot of type Twist
+        # allows us to send velocity and rotation commands
+        self.move_command = Twist()
+
+        # set odom_frame to the /odom topic being published by the turtlebot
+        self.odom_frame = '/odom'
+
+
         #create a publisher node to send velocity commands to turtlebot
         self.command_publisher = rospy.Publisher('cmd_vel', Twist, queue_size=10)
 
+        # create a subscriber to get measurements from lidar sensor.
+        # currently not used, but is left here in case lidar measurements
+        # are needed in the future. See also the laser_data.py script.
         rospy.Subscriber('/scan', LaserScan, laser_data.get_laser_data)
 
         # create a subscriber for battery level
@@ -53,7 +85,21 @@ class turtlebot(object):
         #TODO what's this line do?
         rospy.on_shutdown(self.shutdown)
 
-        self.command = turtlebot_command(self.command_publisher, self.rate)
+
+        # find the coordinate conversion from the turtlebot to the ground truth frame
+        try:
+            self.listener.waitForTransform(self.odom_frame, "base_footprint", rospy.Time(), rospy.Duration(1.0))
+            self.base_frame = "base_footprint"
+        except(tf.Exception, tf.LookupException, tf.ConnectivityException):
+            try:
+                self.listener.waitForTransform(self.odom_frame, 'base_link', rospy.Time(), rospy.Duration(1.0))
+                self.base_frame = 'base_link'
+            except(tf.Exception, tf.ConnectivityException, tf.LookupException):
+                rospy.loginfo("Cannot find transform between odom and base_link or base_footprint")
+                rospy.signal_shutdown("tf Exception")
+
+        # IMPORTANT: When substituting in a new control script, you must update this line
+        self.command = turtlebot_command(self.command_publisher, self.rate, self.listener, self.position, self.move_command, self.odom_frame, self.base_frame)
 
         # bool flag to stop commands from running multiple times (see run_turtlebot() below)
         self.first_turn = True
@@ -74,8 +120,8 @@ class turtlebot(object):
         """
         
         Calls the message_creator.py script to create and output a message
-        to the console. Contains info on the turtlebot's battery level, 
-        odometry, and movement. 
+        to the console. Contains info on the turtlebot's battery level, odometry,
+        and current commands.
 
         """
 
@@ -99,7 +145,14 @@ def run_turtlebot():
     turtle = turtlebot()
 
     while not rospy.is_shutdown():
+
+        # if statement to prevent same command from
+        # running indefinitely
         if turtle.first_turn is True:
+
+            # example of controller implementation. Uses
+            # PID controller to move turtlebot in
+            # a square with sides 0.5 meters long
             turtle.command.move_in_a_square()
 
 
