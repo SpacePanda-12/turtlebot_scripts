@@ -32,7 +32,7 @@ posY = 0
 batteryLevel = 100
 
 
-class turtlebot(object):
+class TurtleBot(object):
     
     def __init__(self):
         """
@@ -70,8 +70,7 @@ class turtlebot(object):
         # set odom_frame to the /odom topic being published by the turtlebot
         self.odom_frame = '/odom'
 
-
-        #create a publisher node to send velocity commands to turtlebot
+        # create a publisher node to send velocity commands to turtlebot
         self.command_publisher = rospy.Publisher('cmd_vel', Twist, queue_size=10)
 
         # create a subscriber to get measurements from lidar sensor.
@@ -114,24 +113,6 @@ class turtlebot(object):
 
         self.command_publisher.publish(Twist())
         rospy.sleep(1)
-
-
-    def send_messages(self):
-        """
-        
-        Calls the message_creator.py script to create and output a message
-        to the console. Contains info on the turtlebot's battery level, odometry,
-        and current commands.
-
-        """
-
-        # publish the twist object to the publisher node we created before on the 'cmd_vel' topic
-        self.command_publisher.publish(self.twist)
-
-        # create a message and output it to the console
-        message_creator.create_message(self.twist, battery_status.batteryLevel, 
-        odometry_status.posX, odometry_status.posY, odometry_status.orient_x, 
-        odometry_status.orient_y, odometry_status.orient_z, odometry_status.orient_w)
     
 
 # function that sends velocity commands to turtlebot, calls other functions. Run by main function (see below)
@@ -141,24 +122,22 @@ def run_turtlebot():
     Sends commands to the turtlebot
 
     """
-    # Initialize an instance of the turtlebot class
-    turtle = turtlebot()
+    # Initialize an instance of the controller
+    # TODO: do we need an argument here?
+    turtlebot = TurtleBot()
+    controller = RealTimeSeriesExperiment()
 
     while not rospy.is_shutdown():
 
         # if statement to prevent same command from
         # running indefinitely
         if turtle.first_turn is True:
-
-            # example of controller implementation. Uses
-            # PID controller to move turtlebot in
-            # a square with sides 0.5 meters long
-            turtle.command.move_in_a_square()
-
+            print("")
+            # TODO call the controller here
+            # do we need a specific function?
 
         turtle.first_turn = False
         
-
 
 # main function; executes the run_turtlebot function until we hit control + C
 if __name__ == '__main__':

@@ -4,7 +4,8 @@ import message_creator
 from math import pi
 
 
-def execute_command(command_publisher, move_command, move_command_translational, move_command_angular, position, rotation):
+def execute_command(command_publisher, move_command, move_command_translational,
+                    move_command_angular, position, rotation):
     """
     
     Sends movement command created by a control script to a turtlebot.
@@ -29,7 +30,17 @@ def execute_command(command_publisher, move_command, move_command_translational,
         rotation: turtlebot's current attitude
     
     """
+    max_command_translational = 0.3
+    max_command_rotational = 1
+
+    if move_command_translational > max_command_translational:
+        move_command_translational = max_command_translational
+
     move_command.linear.x = move_command_translational
+
+    if move_command_angular > max_command_rotational:
+        move_command_angular = max_command_rotational
+
     move_command.angular.z = move_command_angular
 
     # send the command to the turtlebot
@@ -42,4 +53,4 @@ def execute_command(command_publisher, move_command, move_command_translational,
 
     # briefly pause to avoid overloading turtlebot with commands, which will
     # cause sync issues
-    rospy.sleep(.01)
+    rospy.sleep(.001)

@@ -25,6 +25,7 @@ class turtlebot_command(object):
         self.rate = rate
         self.command_publisher = command_publisher
         self.listener = listener
+        # TODO is it necessary to define position here and have it as an input argument?
         self.position = position
         self.move_command = move_command
         self.odom_frame = odom_frame
@@ -96,7 +97,7 @@ class turtlebot_command(object):
         max_command = 1
         start_time = time.time()
 
-        while abs(goal_rotation - (self.rotation)) > 0.25*2*pi/360:
+        while abs(goal_rotation - self.rotation) > 0.25*2*pi/360:
             
             # update position and rotation measurements
             (self.position, self.rotation) = odometry_status.get_odom(self.listener, self.odom_frame, self.base_frame)
